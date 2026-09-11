@@ -3,7 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Journal</title>
+    <title>Trading Journal - Cloud Sync</title>
+    
+    <!-- Firebase SDK & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLLzG7yRo6jOrzB-FQThnQMtDFUhgwSU",
+            authDomain: "trading-journal-468e0.firebaseapp.com",
+            projectId: "trading-journal-468e0",
+            storageBucket: "trading-journal-468e0.firebasestorage.app",
+            messagingSenderId: "707992692114",
+            appId: "1:707992692114:web:338494e3ab9e46e7be8d4b"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let journalData = {};
+        let currentDate = new Date(2026, 8, 1);
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('inputDate').valueAsDate = new Date();
+            await loadCloudData();
+        });
+
+        // Load all trades from Firestore
+        async function loadCloudData() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "trades"));
+                journalData = {};
+                querySnapshot.forEach((docSnap) => {
+                    journalData[docSnap.id] = docSnap.data();
+                });
+                renderCalendar();
+            } catch (e) {
+                console.error("Error loading cloud data: ", e);
+                journalData = JSON.parse(localStorage.getItem('tradingJournalData')) || {};
+                renderCalendar();
+            }
+        }
+
+        // Save trade to Firestore
+        window.saveTrade = async function() {
+            const dateStr = document.getElementById('inputDate').value;
+            const pnlVal = parseFloat(document.getElementById('inputPnl').value);
+            const tradesVal = parseInt(document.getElementById('inputTrades').value);
+
+            if (!dateStr || isNaN(pnlVal)) {
+                alert('Please enter a valid date and P/L amount.');
+                return;
+            }
+
+            const tradeObj = { pnl: pnlVal, trades: tradesVal || 0 };
+            journalData[dateStr] = tradeObj;
+
+            try {
+                await setDoc(doc(db, "trades", dateStr), tradeObj);
+            } catch (e) {
+                console.error("Cloud save failed, saving locally: ", e);
+                localStorage.setItem('tradingJournalData', JSON.stringify(journalData));
+            }
+
+            const [y, m] = dateStr.split('-');
+            currentDate = new Date(y, m - 1, 1);
+            renderCalendar();
+        };
+
+        // Reset Journal Data
+        window.resetJournal = async function() {
+            if (confirm('Are you sure you want to clear all cloud trading data?')) {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "trades"));
+                    for (const docSnap of querySnapshot.docs) {
+                        await deleteDoc(doc(db, "trades", docSnap.id));
+                    }
+                    journalData = {};
+                    renderCalendar();
+                } catch (e) {
+                    alert('Error clearing cloud data. Check console.');
+                    console.error(e);
+                }
+            }
+        };
+
+        window.changeMonth = function(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        };
+
+        window.goToday = function() {
+            currentDate = new Date();
+            renderCalendar();
+        };
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById("monthDisplay").innerText = `${monthNames[month]} ${year}`;
+
+            const grid = document.getElementById("calendarGrid");
+            grid.innerHTML = `
+                <div class="day-header">Mo</div>
+                <div class="day-header">Tu</div>
+                <div class="day-header">We</div>
+                <div class="day-header">Th</div>
+                <div class="day-header">Fr</div>
+                <div class="day-header">Sa</div>
+                <div class="day-header">Su</div>
+            `;
+
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevTotalDays = new Date(year, month, 0).getDate();
+
+            let calendarDays = [];
+            let monthlySum = 0;
+
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                calendarDays.push({ dateStr: "", dayNum: prevTotalDays - i, isCurrentMonth: false, pnl: 0, trades: 0 });
+            }
+
+            for (let i = 1; i <= totalDays; i++) {
+                const formattedMonth = String(month + 1).padStart(2, '0');
+                const formattedDay = String(i).padStart(2, '0');
+                const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+                
+                const dayData = journalData[dateStr] || { pnl: 0, trades: 0 };
+                monthlySum += dayData.pnl;
+
+                calendarDays.push({ dateStr: dateStr, dayNum: i, isCurrentMonth: true, pnl: dayData.pnl, trades: dayData.trades });
+            }
+
+            const remainingCells = (7 - (calendarDays.length % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                calendarDays.push({ dateStr: "", dayNum: i, isCurrentMonth: false, pnl: 0, trades: 0 });
+            }
+
+            for (let i = 0; i < calendarDays.length; i += 7) {
+                let weekSlice = calendarDays.slice(i, i + 7);
+                let weekPnl = 0;
+                let weekTrades = 0;
+
+                weekSlice.forEach(day => {
+                    if (day.isCurrentMonth) {
+                        weekPnl += day.pnl;
+                        weekTrades += day.trades;
+                    }
+                });
+
+                for (let d = 0; d < 5; d++) {
+                    let day = weekSlice[d];
+                    let cellClass = "day-cell" + (day.isCurrentMonth ? "" : " other-month");
+                    let pnlClass = "zero";
+                    let formattedPnl = "$0.00";
+
+                    if (day.pnl > 0) {
+                        pnlClass = "profit";
+                        formattedPnl = `+$${day.pnl.toFixed(2)}`;
+                        cellClass += " cell-profit";
+                    } else if (day.pnl < 0) {
+                        pnlClass = "loss";
+                        formattedPnl = `-$${Math.abs(day.pnl).toFixed(2)}`;
+                        cellClass += " cell-loss";
+                    }
+
+                    grid.innerHTML += `
+                        <div class="${cellClass}">
+                            <div class="day-number">${day.dayNum}</div>
+                            <div class="day-content">
+                                <div class="day-pnl ${pnlClass}">${formattedPnl}</div>
+                                <div class="day-trades">${day.trades} trades</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let satWeekNum = Math.floor(i / 7) + 1;
+                let satPnlClass = weekPnl > 0 ? "profit" : weekPnl < 0 ? "loss" : "zero";
+                let satFormattedPnl = weekPnl >= 0 ? `+$${weekPnl.toFixed(2)}` : `-$${Math.abs(weekPnl).toFixed(2)}`;
+
+                grid.innerHTML += `
+                    <div class="week-summary-cell">
+                        <div class="day-number">${weekSlice[5].dayNum}</div>
+                        <div class="week-title">Week ${satWeekNum}</div>
+                        <div class="week-pnl ${satPnlClass}">${satFormattedPnl}</div>
+                        <div class="week-trades">${weekTrades} trades</div>
+                    </div>
+                `;
+
+                let sunDay = weekSlice[6];
+                let sunClass = "day-cell" + (sunDay.isCurrentMonth ? "" : " other-month");
+                grid.innerHTML += `
+                    <div class="${sunClass}">
+                        <div class="day-number">${sunDay.dayNum}</div>
+                        <div class="day-content">
+                            <div class="day-pnl zero">$0.00</div>
+                            <div class="day-trades">0 trades</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const monthlyHeader = document.getElementById("monthlyHeaderPL");
+            const monthlyClass = monthlySum >= 0 ? "profit" : "loss";
+            monthlyHeader.innerHTML = `Monthly P/L: <span class="${monthlyClass}">$${monthlySum.toFixed(2)}</span>`;
+        }
+    </script>
+
     <style>
         :root {
             --bg-main: #12141a;
@@ -220,8 +433,8 @@
         <label>Date: <input type="date" id="inputDate"></label>
         <label>Net P/L ($): <input type="number" id="inputPnl" step="0.01" placeholder="0.00"></label>
         <label>Total Trades: <input type="number" id="inputTrades" value="1" min="0"></label>
-        <button class="action-btn" onclick="saveTrade()">Save Trade</button>
-        <button class="reset-btn" onclick="resetJournal()">Clear All Data</button>
+        <button class="action-btn" onclick="saveTrade()">Save to Cloud</button>
+        <button class="reset-btn" onclick="resetJournal()">Clear Cloud DB</button>
     </div>
 
     <div class="calendar-grid" id="calendarGrid">
@@ -234,167 +447,6 @@
         <div class="day-header">Su</div>
     </div>
 </div>
-
-<script>
-    let journalData = JSON.parse(localStorage.getItem('tradingJournalData')) || {};
-
-    let currentDate = new Date(2026, 8, 1);
-    document.getElementById('inputDate').valueAsDate = new Date();
-
-    function saveTrade() {
-        const dateStr = document.getElementById('inputDate').value;
-        const pnlVal = parseFloat(document.getElementById('inputPnl').value);
-        const tradesVal = parseInt(document.getElementById('inputTrades').value);
-
-        if (!dateStr || isNaN(pnlVal)) {
-            alert('Please enter a valid date and P/L amount.');
-            return;
-        }
-
-        journalData[dateStr] = { pnl: pnlVal, trades: tradesVal || 0 };
-        localStorage.setItem('tradingJournalData', JSON.stringify(journalData));
-
-        const [y, m] = dateStr.split('-');
-        currentDate = new Date(y, m - 1, 1);
-
-        renderCalendar();
-    }
-
-    function resetJournal() {
-        if (confirm('Are you sure you want to clear all trading data?')) {
-            journalData = {};
-            localStorage.removeItem('tradingJournalData');
-            renderCalendar();
-        }
-    }
-
-    function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        document.getElementById("monthDisplay").innerText = `${monthNames[month]} ${year}`;
-
-        const grid = document.getElementById("calendarGrid");
-        grid.innerHTML = `
-            <div class="day-header">Mo</div>
-            <div class="day-header">Tu</div>
-            <div class="day-header">We</div>
-            <div class="day-header">Th</div>
-            <div class="day-header">Fr</div>
-            <div class="day-header">Sa</div>
-            <div class="day-header">Su</div>
-        `;
-
-        const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
-        const totalDays = new Date(year, month + 1, 0).getDate();
-        const prevTotalDays = new Date(year, month, 0).getDate();
-
-        let calendarDays = [];
-        let monthlySum = 0;
-
-        for (let i = firstDayIndex - 1; i >= 0; i--) {
-            calendarDays.push({ dateStr: "", dayNum: prevTotalDays - i, isCurrentMonth: false, pnl: 0, trades: 0 });
-        }
-
-        for (let i = 1; i <= totalDays; i++) {
-            const formattedMonth = String(month + 1).padStart(2, '0');
-            const formattedDay = String(i).padStart(2, '0');
-            const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
-            
-            const dayData = journalData[dateStr] || { pnl: 0, trades: 0 };
-            monthlySum += dayData.pnl;
-
-            calendarDays.push({ dateStr: dateStr, dayNum: i, isCurrentMonth: true, pnl: dayData.pnl, trades: dayData.trades });
-        }
-
-        const remainingCells = (7 - (calendarDays.length % 7)) % 7;
-        for (let i = 1; i <= remainingCells; i++) {
-            calendarDays.push({ dateStr: "", dayNum: i, isCurrentMonth: false, pnl: 0, trades: 0 });
-        }
-
-        for (let i = 0; i < calendarDays.length; i += 7) {
-            let weekSlice = calendarDays.slice(i, i + 7);
-            let weekPnl = 0;
-            let weekTrades = 0;
-
-            weekSlice.forEach(day => {
-                if (day.isCurrentMonth) {
-                    weekPnl += day.pnl;
-                    weekTrades += day.trades;
-                }
-            });
-
-            for (let d = 0; d < 5; d++) {
-                let day = weekSlice[d];
-                let cellClass = "day-cell" + (day.isCurrentMonth ? "" : " other-month");
-                let pnlClass = "zero";
-                let formattedPnl = "$0.00";
-
-                if (day.pnl > 0) {
-                    pnlClass = "profit";
-                    formattedPnl = `+$${day.pnl.toFixed(2)}`;
-                    cellClass += " cell-profit";
-                } else if (day.pnl < 0) {
-                    pnlClass = "loss";
-                    formattedPnl = `-$${Math.abs(day.pnl).toFixed(2)}`;
-                    cellClass += " cell-loss";
-                }
-
-                grid.innerHTML += `
-                    <div class="${cellClass}">
-                        <div class="day-number">${day.dayNum}</div>
-                        <div class="day-content">
-                            <div class="day-pnl ${pnlClass}">${formattedPnl}</div>
-                            <div class="day-trades">${day.trades} trades</div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            let satWeekNum = Math.floor(i / 7) + 1;
-            let satPnlClass = weekPnl > 0 ? "profit" : weekPnl < 0 ? "loss" : "zero";
-            let satFormattedPnl = weekPnl >= 0 ? `+$${weekPnl.toFixed(2)}` : `-$${Math.abs(weekPnl).toFixed(2)}`;
-
-            grid.innerHTML += `
-                <div class="week-summary-cell">
-                    <div class="day-number">${weekSlice[5].dayNum}</div>
-                    <div class="week-title">Week ${satWeekNum}</div>
-                    <div class="week-pnl ${satPnlClass}">${satFormattedPnl}</div>
-                    <div class="week-trades">${weekTrades} trades</div>
-                </div>
-            `;
-
-            let sunDay = weekSlice[6];
-            let sunClass = "day-cell" + (sunDay.isCurrentMonth ? "" : " other-month");
-            grid.innerHTML += `
-                <div class="${sunClass}">
-                    <div class="day-number">${sunDay.dayNum}</div>
-                    <div class="day-content">
-                        <div class="day-pnl zero">$0.00</div>
-                        <div class="day-trades">0 trades</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        const monthlyHeader = document.getElementById("monthlyHeaderPL");
-        const monthlyClass = monthlySum >= 0 ? "profit" : "loss";
-        monthlyHeader.innerHTML = `Monthly P/L: <span class="${monthlyClass}">$${monthlySum.toFixed(2)}</span>`;
-    }
-
-    function changeMonth(direction) {
-        currentDate.setMonth(currentDate.getMonth() + direction);
-        renderCalendar();
-    }
-
-    function goToday() {
-        currentDate = new Date();
-        renderCalendar();
-    }
-
-    renderCalendar();
-</script>
 
 </body>
 </html>
