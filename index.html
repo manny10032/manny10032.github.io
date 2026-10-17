@@ -3,450 +3,836 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Journal - Cloud Sync</title>
-    
-    <!-- Firebase SDK & Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDLLzG7yRo6jOrzB-FQThnQMtDFUhgwSU",
-            authDomain: "trading-journal-468e0.firebaseapp.com",
-            projectId: "trading-journal-468e0",
-            storageBucket: "trading-journal-468e0.firebasestorage.app",
-            messagingSenderId: "707992692114",
-            appId: "1:707992692114:web:338494e3ab9e46e7be8d4b"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        let journalData = {};
-        let currentDate = new Date(2026, 8, 1);
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('inputDate').valueAsDate = new Date();
-            await loadCloudData();
-        });
-
-        // Load all trades from Firestore
-        async function loadCloudData() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "trades"));
-                journalData = {};
-                querySnapshot.forEach((docSnap) => {
-                    journalData[docSnap.id] = docSnap.data();
-                });
-                renderCalendar();
-            } catch (e) {
-                console.error("Error loading cloud data: ", e);
-                journalData = JSON.parse(localStorage.getItem('tradingJournalData')) || {};
-                renderCalendar();
-            }
-        }
-
-        // Save trade to Firestore
-        window.saveTrade = async function() {
-            const dateStr = document.getElementById('inputDate').value;
-            const pnlVal = parseFloat(document.getElementById('inputPnl').value);
-            const tradesVal = parseInt(document.getElementById('inputTrades').value);
-
-            if (!dateStr || isNaN(pnlVal)) {
-                alert('Please enter a valid date and P/L amount.');
-                return;
-            }
-
-            const tradeObj = { pnl: pnlVal, trades: tradesVal || 0 };
-            journalData[dateStr] = tradeObj;
-
-            try {
-                await setDoc(doc(db, "trades", dateStr), tradeObj);
-            } catch (e) {
-                console.error("Cloud save failed, saving locally: ", e);
-                localStorage.setItem('tradingJournalData', JSON.stringify(journalData));
-            }
-
-            const [y, m] = dateStr.split('-');
-            currentDate = new Date(y, m - 1, 1);
-            renderCalendar();
-        };
-
-        // Reset Journal Data
-        window.resetJournal = async function() {
-            if (confirm('Are you sure you want to clear all cloud trading data?')) {
-                try {
-                    const querySnapshot = await getDocs(collection(db, "trades"));
-                    for (const docSnap of querySnapshot.docs) {
-                        await deleteDoc(doc(db, "trades", docSnap.id));
-                    }
-                    journalData = {};
-                    renderCalendar();
-                } catch (e) {
-                    alert('Error clearing cloud data. Check console.');
-                    console.error(e);
-                }
-            }
-        };
-
-        window.changeMonth = function(direction) {
-            currentDate.setMonth(currentDate.getMonth() + direction);
-            renderCalendar();
-        };
-
-        window.goToday = function() {
-            currentDate = new Date();
-            renderCalendar();
-        };
-
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById("monthDisplay").innerText = `${monthNames[month]} ${year}`;
-
-            const grid = document.getElementById("calendarGrid");
-            grid.innerHTML = `
-                <div class="day-header">Mo</div>
-                <div class="day-header">Tu</div>
-                <div class="day-header">We</div>
-                <div class="day-header">Th</div>
-                <div class="day-header">Fr</div>
-                <div class="day-header">Sa</div>
-                <div class="day-header">Su</div>
-            `;
-
-            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const prevTotalDays = new Date(year, month, 0).getDate();
-
-            let calendarDays = [];
-            let monthlySum = 0;
-
-            for (let i = firstDayIndex - 1; i >= 0; i--) {
-                calendarDays.push({ dateStr: "", dayNum: prevTotalDays - i, isCurrentMonth: false, pnl: 0, trades: 0 });
-            }
-
-            for (let i = 1; i <= totalDays; i++) {
-                const formattedMonth = String(month + 1).padStart(2, '0');
-                const formattedDay = String(i).padStart(2, '0');
-                const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
-                
-                const dayData = journalData[dateStr] || { pnl: 0, trades: 0 };
-                monthlySum += dayData.pnl;
-
-                calendarDays.push({ dateStr: dateStr, dayNum: i, isCurrentMonth: true, pnl: dayData.pnl, trades: dayData.trades });
-            }
-
-            const remainingCells = (7 - (calendarDays.length % 7)) % 7;
-            for (let i = 1; i <= remainingCells; i++) {
-                calendarDays.push({ dateStr: "", dayNum: i, isCurrentMonth: false, pnl: 0, trades: 0 });
-            }
-
-            for (let i = 0; i < calendarDays.length; i += 7) {
-                let weekSlice = calendarDays.slice(i, i + 7);
-                let weekPnl = 0;
-                let weekTrades = 0;
-
-                weekSlice.forEach(day => {
-                    if (day.isCurrentMonth) {
-                        weekPnl += day.pnl;
-                        weekTrades += day.trades;
-                    }
-                });
-
-                for (let d = 0; d < 5; d++) {
-                    let day = weekSlice[d];
-                    let cellClass = "day-cell" + (day.isCurrentMonth ? "" : " other-month");
-                    let pnlClass = "zero";
-                    let formattedPnl = "$0.00";
-
-                    if (day.pnl > 0) {
-                        pnlClass = "profit";
-                        formattedPnl = `+$${day.pnl.toFixed(2)}`;
-                        cellClass += " cell-profit";
-                    } else if (day.pnl < 0) {
-                        pnlClass = "loss";
-                        formattedPnl = `-$${Math.abs(day.pnl).toFixed(2)}`;
-                        cellClass += " cell-loss";
-                    }
-
-                    grid.innerHTML += `
-                        <div class="${cellClass}">
-                            <div class="day-number">${day.dayNum}</div>
-                            <div class="day-content">
-                                <div class="day-pnl ${pnlClass}">${formattedPnl}</div>
-                                <div class="day-trades">${day.trades} trades</div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                let satWeekNum = Math.floor(i / 7) + 1;
-                let satPnlClass = weekPnl > 0 ? "profit" : weekPnl < 0 ? "loss" : "zero";
-                let satFormattedPnl = weekPnl >= 0 ? `+$${weekPnl.toFixed(2)}` : `-$${Math.abs(weekPnl).toFixed(2)}`;
-
-                grid.innerHTML += `
-                    <div class="week-summary-cell">
-                        <div class="day-number">${weekSlice[5].dayNum}</div>
-                        <div class="week-title">Week ${satWeekNum}</div>
-                        <div class="week-pnl ${satPnlClass}">${satFormattedPnl}</div>
-                        <div class="week-trades">${weekTrades} trades</div>
-                    </div>
-                `;
-
-                let sunDay = weekSlice[6];
-                let sunClass = "day-cell" + (sunDay.isCurrentMonth ? "" : " other-month");
-                grid.innerHTML += `
-                    <div class="${sunClass}">
-                        <div class="day-number">${sunDay.dayNum}</div>
-                        <div class="day-content">
-                            <div class="day-pnl zero">$0.00</div>
-                            <div class="day-trades">0 trades</div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            const monthlyHeader = document.getElementById("monthlyHeaderPL");
-            const monthlyClass = monthlySum >= 0 ? "profit" : "loss";
-            monthlyHeader.innerHTML = `Monthly P/L: <span class="${monthlyClass}">$${monthlySum.toFixed(2)}</span>`;
-        }
-    </script>
-
+    <title>Trading Dashboard</title>
     <style>
         :root {
-            --bg-main: #12141a;
-            --bg-card: #181b22;
-            --bg-card-hover: #212631;
-            --border-color: #2b313d;
-            --text-main: #f0f3f9;
-            --text-muted: #848e9c;
-            --green: #0ecb81;
-            --red: #f6465d;
-            --accent: #2962ff;
+            /* Light Mode Variables */
+            --bg-color: #f4f4f9;
+            --page-color: #ffffff;
+            --text-color: #2b2b2b;
+            --border-color: #d1d1d1;
+            --accent-color: #4a6fa5;
+            --profit-color: #2e7d32;
+            --loss-color: #c62828;
+            --neutral-color: #888888;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        body.dark-mode {
+            /* Dark Mode Variables */
+            --bg-color: #121212;
+            --page-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333333;
+            --accent-color: #5c85c4;
+            --profit-color: #4caf50;
+            --loss-color: #e57373;
+            --neutral-color: #aaaaaa;
         }
-
+        
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 30px 15px;
-            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        .container {
+        .controls {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        button.action-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button.action-btn:hover {
+            background-color: #365580;
+        }
+
+        button.theme-btn {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button.theme-btn:hover {
+            background-color: var(--page-color);
+        }
+
+        button.back-btn {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.back-btn:hover {
+            background-color: var(--page-color);
+        }
+
+        .header-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .month-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--page-color);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--text-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        /* CALENDAR VIEW */
+        #calendar-view {
             width: 100%;
             max-width: 1200px;
         }
 
-        .header {
+        .stats-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px 25px;
+            gap: 20px;
             margin-bottom: 20px;
         }
 
-        .nav-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .nav-btn, .today-btn, .action-btn, .reset-btn {
-            background: none;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .nav-btn:hover, .today-btn:hover, .action-btn:hover, .reset-btn:hover {
-            background-color: var(--bg-card-hover);
-        }
-
-        .action-btn {
-            background-color: var(--accent);
-            border-color: var(--accent);
-            font-weight: 600;
-        }
-
-        .reset-btn {
-            border-color: var(--red);
-            color: var(--red);
-        }
-
-        .month-title, .monthly-pl {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .control-panel {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
+        .stat-card {
+            background: var(--page-color);
+            padding: 20px;
             border-radius: 8px;
-            padding: 15px 25px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
+            flex: 1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: background-color 0.3s;
         }
 
-        .control-panel input {
-            background-color: var(--bg-main);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .control-panel label {
-            font-size: 13px;
-            color: var(--text-muted);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .stat-card .label { font-size: 12px; color: var(--neutral-color); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 24px; font-weight: bold; margin-top: 5px; }
+        .stat-card .value.profit { color: var(--profit-color); }
+        .stat-card .value.loss { color: var(--loss-color); }
 
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            background-color: var(--border-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
+            gap: 10px;
         }
 
-        .day-header {
-            background-color: var(--bg-card);
-            color: var(--text-muted);
+        .weekday-header {
             text-align: center;
-            padding: 12px 0;
-            font-size: 13px;
-            font-weight: 600;
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--neutral-color);
+            padding: 10px 0;
             text-transform: uppercase;
         }
 
         .day-cell {
-            background-color: var(--bg-card);
-            min-height: 110px;
+            background: var(--page-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 100px;
             padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            user-select: none;
         }
 
-        .day-cell.other-month {
-            opacity: 0.3;
+        .day-cell:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
         }
 
-        .day-number {
-            font-size: 13px;
-            color: var(--text-muted);
+        .day-cell.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+            box-shadow: none;
         }
 
-        .day-content {
-            text-align: center;
-            margin: auto 0;
+        .day-cell.empty:hover {
+            transform: none;
         }
 
-        .day-pnl {
+        .date-number {
             font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 2px;
+            font-weight: 600;
+            color: var(--neutral-color);
         }
 
-        .day-trades {
-            font-size: 11px;
-            color: var(--text-muted);
+        .pnl-value {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
         }
 
-        .week-summary-cell {
-            background-color: #151821;
+        .pnl-value.profit { color: var(--profit-color); }
+        .pnl-value.loss { color: var(--loss-color); }
+
+        .hint-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--neutral-color);
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* JOURNAL VIEW */
+        #journal-view {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .journal-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .page {
+            background: var(--page-color);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: background-color 0.3s;
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-color);
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--neutral-color);
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 10px;
         }
 
-        .week-title {
+        label {
             font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            opacity: 0.8;
         }
 
-        .week-pnl {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 2px;
+        input[type="text"], input[type="number"], input[type="date"] {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            padding: 5px 0;
+            font-size: 14px;
+            background: transparent;
+            color: var(--text-color);
+            outline: none;
+            width: 100%;
         }
 
-        .week-trades {
-            font-size: 11px;
-            color: var(--text-muted);
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-bottom-color: var(--accent-color);
         }
 
-        .profit { color: var(--green); }
-        .loss { color: var(--red); }
-        .zero { color: var(--text-muted); }
-        .cell-profit { border-left: 3px solid var(--green); }
-        .cell-loss { border-left: 3px solid var(--red); }
+        .checkbox-group { margin-bottom: 20px; }
+        .checkbox-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .checkbox-row input[type="text"] { margin-left: 10px; }
+
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+            margin-bottom: 15px;
+            background: transparent;
+            color: var(--text-color);
+            outline: none;
+        }
+
+        textarea:focus { border-color: var(--accent-color); }
+
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .radio-label { font-size: 13px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+        .chart-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            padding: 40px;
+            text-align: center;
+            color: var(--neutral-color);
+            cursor: pointer;
+            margin-top: 10px;
+            position: relative;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-upload input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        #chart-preview { max-width: 100%; max-height: 300px; display: none; border-radius: 4px; margin-top: 10px; }
+
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .controls, .header-bar, .hint-text { display: none !important; }
+            #calendar-view { display: none !important; }
+            #journal-view { display: block !important; }
+            .journal-container { box-shadow: none; gap: 20px; }
+            .page { background: white; box-shadow: none; padding: 20px; border: 1px solid #eee; }
+            input, textarea, label { color: black !important; }
+            input::placeholder, textarea::placeholder { color: transparent; }
+        }
+
+        @media (max-width: 900px) {
+            .journal-container { grid-template-columns: 1fr; }
+            .calendar-grid { grid-template-columns: repeat(2, 1fr); }
+            .weekday-header { display: none; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <div class="nav-controls">
-            <button class="nav-btn" onclick="changeMonth(-1)">&lt;</button>
-            <span class="month-title" id="monthDisplay">September 2026</span>
-            <button class="nav-btn" onclick="changeMonth(1)">&gt;</button>
+    <div class="controls">
+        <button class="theme-btn" id="theme-toggle">🌙 Dark Mode</button>
+    </div>
+
+    <!-- CALENDAR DASHBOARD VIEW -->
+    <div id="calendar-view">
+        <div class="header-bar">
+            <div class="month-header">
+                <button id="btn-prev-month" class="nav-btn">◀</button>
+                <h1 id="month-title">October 2026</h1>
+                <button id="btn-next-month" class="nav-btn">▶</button>
+            </div>
+            <div></div> <!-- Spacer for flex alignment -->
         </div>
-        <div class="monthly-pl" id="monthlyHeaderPL">Monthly P/L: $0.00</div>
-        <button class="today-btn" onclick="goToday()">Today</button>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="label">Gross P&L (This Month)</div>
+                <div class="value" id="gross-pnl">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Win Rate (This Month)</div>
+                <div class="value" id="win-rate">0%</div>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendar-grid">
+            <!-- Weekday Headers -->
+            <div class="weekday-header">Sun</div>
+            <div class="weekday-header">Mon</div>
+            <div class="weekday-header">Tue</div>
+            <div class="weekday-header">Wed</div>
+            <div class="weekday-header">Thu</div>
+            <div class="weekday-header">Fri</div>
+            <div class="weekday-header">Sat</div>
+            <!-- Days injected via JS -->
+        </div>
+
+        <div class="hint-text">Double-click any calendar day to open the Trading Journal for that date.</div>
     </div>
 
-    <div class="control-panel">
-        <label>Date: <input type="date" id="inputDate"></label>
-        <label>Net P/L ($): <input type="number" id="inputPnl" step="0.01" placeholder="0.00"></label>
-        <label>Total Trades: <input type="number" id="inputTrades" value="1" min="0"></label>
-        <button class="action-btn" onclick="saveTrade()">Save to Cloud</button>
-        <button class="reset-btn" onclick="resetJournal()">Clear Cloud DB</button>
+    <!-- JOURNAL VIEW -->
+    <div id="journal-view">
+        <div class="header-bar">
+            <button class="back-btn" id="btn-back">← Back to Calendar</button>
+            <button class="action-btn" onclick="window.print()">Save PDF / Print Entry</button>
+        </div>
+
+        <div class="journal-container">
+            <!-- LEFT COLUMN -->
+            <div class="page prepare-page">
+                <h2>PREPARE TO TRADE</h2>
+                <div class="subtitle">Before the market opens, slow down and think clearly. Define your goals, control your risk, and commit to discipline before taking a single trade.</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Today, I Trade With:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Profit Goal ($):</label>
+                        <input type="number">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>I Will Stop At (Max Loss $):</label>
+                        <input type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Trades Allowed:</label>
+                        <input type="number">
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 20px;">
+                    <div class="form-group checkbox-group">
+                        <label>Setups I Am Allowed To Take:</label>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>I Will Not Trade If:</label>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Market Bias Today:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Key Levels:</label>
+                        <input type="text">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>I Will Only Enter If:</label>
+                    <input type="text">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>If I Hit My Loss Limit, I Will:</label>
+                    <input type="text">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>If I Feel Emotional, I Will:</label>
+                    <input type="text">
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Right Now I Feel:</label>
+                    <div class="radio-grid">
+                        <label class="radio-label"><input type="radio" name="mood"> Focused</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Nervous</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Excited</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Frustrated</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Greedy</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Calm</label>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 30px;">
+                    <div class="form-group">
+                        <label>Date:</label>
+                        <input type="date" id="journal-date" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="page review-page">
+                <h2>POST TRADE REVIEW</h2>
+                <div class="subtitle">Review your actions, not just your results. This is where you learn, adjust, and improve your discipline.</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pair / Asset:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group" style="justify-content: center; padding-top: 15px;">
+                        <label class="radio-label"><input type="radio" name="direction"> Short &nbsp;&nbsp; <input type="radio" name="direction"> Long</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Position Size:</label>
+                        <input type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Setup Name:</label>
+                        <input type="text">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>R:R Ratio:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group" style="justify-content: center; padding-top: 15px;">
+                        <label class="radio-label"><input type="radio" name="outcome" value="win" id="radio-win"> Win &nbsp;&nbsp; 
+                        <input type="radio" name="outcome" value="loss" id="radio-loss"> Loss</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Entry Price:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Loss:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Exit Price:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                    <div class="form-group">
+                        <label>Take Profit:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>P/L ($):</label>
+                        <input type="number" id="pnl-input" placeholder="e.g. 500 or -150">
+                    </div>
+                    <div class="form-group">
+                        <label>Execution Rating (1-10):</label>
+                        <input type="number" min="1" max="10">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>What Went Well?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Mistakes Made?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>What Could Be Improved?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Chart (Click to attach execution screenshot):</label>
+                    <div class="chart-upload">
+                        <span id="upload-text">+ Upload Image</span>
+                        <input type="file" accept="image/*" id="chart-input">
+                        <img id="chart-preview" src="#" alt="Chart Preview">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="calendar-grid" id="calendarGrid">
-        <div class="day-header">Mo</div>
-        <div class="day-header">Tu</div>
-        <div class="day-header">We</div>
-        <div class="day-header">Th</div>
-        <div class="day-header">Fr</div>
-        <div class="day-header">Sa</div>
-        <div class="day-header">Su</div>
-    </div>
-</div>
+    <script>
+        // --- Dark Mode Logic ---
+        const themeBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            themeBtn.textContent = '☀️ Light Mode';
+        }
 
+        themeBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                themeBtn.textContent = '☀️ Light Mode';
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeBtn.textContent = '🌙 Dark Mode';
+            }
+        });
+
+        // --- Application & Calendar Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const calendarGrid = document.getElementById('calendar-grid');
+            
+            // Set starting date to October 2026 (Month is 0-indexed, so Oct = 9)
+            let currentViewDate = new Date(2026, 9, 1); 
+            
+            // Load saved journal data from Local Storage
+            let journalData = JSON.parse(localStorage.getItem('trading_journal_data')) || {};
+            let activeDateString = null;
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            function renderCalendar() {
+                const year = currentViewDate.getFullYear();
+                const month = currentViewDate.getMonth();
+                
+                // Update Title
+                document.getElementById('month-title').textContent = `${monthNames[month]} ${year}`;
+
+                // Calculate month metrics
+                const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday...
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // Clear existing cells except headers
+                const existingCells = calendarGrid.querySelectorAll('.day-cell');
+                existingCells.forEach(c => c.remove());
+
+                // Create empty offset cells
+                for (let i = 0; i < firstDayIndex; i++) {
+                    let emptyCell = document.createElement('div');
+                    emptyCell.className = 'day-cell empty';
+                    calendarGrid.appendChild(emptyCell);
+                }
+
+                // Create actual days
+                for (let i = 1; i <= daysInMonth; i++) {
+                    let cell = document.createElement('div');
+                    cell.className = 'day-cell';
+                    
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    
+                    cell.innerHTML = `
+                        <div class="date-number">${i}</div>
+                        <div class="pnl-value" id="pnl-display-${dateStr}"></div>
+                    `;
+
+                    cell.addEventListener('dblclick', () => openJournal(dateStr));
+                    calendarGrid.appendChild(cell);
+
+                    // If data exists, display it immediately
+                    if (journalData[dateStr] && journalData[dateStr].pnl !== undefined) {
+                        const val = journalData[dateStr].pnl;
+                        const displayCell = cell.querySelector('.pnl-value');
+                        displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
+                        displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
+                    }
+                }
+
+                updateDashboardStats();
+            }
+
+            // Month Navigation Listeners
+            document.getElementById('btn-prev-month').addEventListener('click', () => {
+                currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            document.getElementById('btn-next-month').addEventListener('click', () => {
+                currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            // Open Specific Day Journal
+            function openJournal(dateStr) {
+                activeDateString = dateStr;
+                document.getElementById('calendar-view').style.display = 'none';
+                document.getElementById('journal-view').style.display = 'block';
+                
+                document.getElementById('journal-date').value = dateStr;
+                
+                // Pre-fill if data exists
+                const currentData = journalData[dateStr] || {};
+                document.getElementById('pnl-input').value = currentData.pnl !== undefined ? currentData.pnl : '';
+                
+                if (currentData.outcome === 'win') {
+                    document.getElementById('radio-win').checked = true;
+                } else if (currentData.outcome === 'loss') {
+                    document.getElementById('radio-loss').checked = true;
+                } else {
+                    document.getElementById('radio-win').checked = false;
+                    document.getElementById('radio-loss').checked = false;
+                }
+
+                window.scrollTo(0,0);
+            }
+
+            // Go back to calendar
+            document.getElementById('btn-back').addEventListener('click', () => {
+                activeDateString = null; 
+                document.getElementById('journal-view').style.display = 'none';
+                document.getElementById('calendar-view').style.display = 'block';
+                window.scrollTo(0,0);
+            });
+
+            // Sync Data Function
+            document.getElementById('pnl-input').addEventListener('input', syncCalendarData);
+            document.getElementById('radio-win').addEventListener('change', syncCalendarData);
+            document.getElementById('radio-loss').addEventListener('change', syncCalendarData);
+
+            function syncCalendarData() {
+                if (!activeDateString) return;
+
+                if (!journalData[activeDateString]) journalData[activeDateString] = {};
+                
+                // Parse PNL
+                const pnlValue = document.getElementById('pnl-input').value;
+                journalData[activeDateString].pnl = pnlValue !== '' ? parseFloat(pnlValue) : undefined;
+                
+                // Parse Win/Loss
+                if (document.getElementById('radio-win').checked) {
+                    journalData[activeDateString].outcome = 'win';
+                } else if (document.getElementById('radio-loss').checked) {
+                    journalData[activeDateString].outcome = 'loss';
+                } else {
+                    journalData[activeDateString].outcome = null;
+                }
+
+                // Save to local storage so data isn't lost on refresh
+                localStorage.setItem('trading_journal_data', JSON.stringify(journalData));
+
+                // Update visual cell in background
+                const displayCell = document.getElementById(`pnl-display-${activeDateString}`);
+                if (displayCell) {
+                    if (journalData[activeDateString].pnl !== undefined) {
+                        const val = journalData[activeDateString].pnl;
+                        displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
+                        displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
+                    } else {
+                        displayCell.textContent = '';
+                        displayCell.className = 'pnl-value';
+                    }
+                }
+
+                updateDashboardStats();
+            }
+
+            // Update Current Month Stats
+            function updateDashboardStats() {
+                const year = currentViewDate.getFullYear();
+                const month = String(currentViewDate.getMonth() + 1).padStart(2, '0');
+                const monthPrefix = `${year}-${month}`; // e.g. "2026-10"
+                
+                let totalPnl = 0;
+                let wins = 0;
+                let totalTrades = 0;
+
+                // Loop through all saved data, but only calculate for the viewed month
+                for (let dateStr in journalData) {
+                    if (dateStr.startsWith(monthPrefix)) {
+                        if (journalData[dateStr].pnl !== undefined) {
+                            totalPnl += journalData[dateStr].pnl;
+                        }
+                        if (journalData[dateStr].outcome === 'win') {
+                            wins++;
+                            totalTrades++;
+                        } else if (journalData[dateStr].outcome === 'loss') {
+                            totalTrades++;
+                        }
+                    }
+                }
+
+                const grossEl = document.getElementById('gross-pnl');
+                grossEl.textContent = totalPnl >= 0 ? `+$${totalPnl.toFixed(2)}` : `-$${Math.abs(totalPnl).toFixed(2)}`;
+                grossEl.className = `value ${totalPnl >= 0 ? 'profit' : 'loss'}`;
+
+                const winRateEl = document.getElementById('win-rate');
+                const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
+                winRateEl.textContent = `${winRate}%`;
+            }
+
+            // Image Preview Tool
+            document.getElementById('chart-input').addEventListener('change', function(e) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('chart-preview');
+                    const text = document.getElementById('upload-text');
+                    preview.src = event.target.result;
+                    preview.style.display = 'block';
+                    text.style.display = 'none';
+                }
+                if(e.target.files[0]) {
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // Initialize the app on load
+            renderCalendar();
+        });
+    </script>
 </body>
 </html>
