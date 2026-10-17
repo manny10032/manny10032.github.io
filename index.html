@@ -426,4 +426,407 @@
     <div id="journal-view">
         <div class="header-bar">
             <button class="back-btn" id="btn-back">← Back to Calendar</button>
-            <button class="action-btn" onclick="window.print()">Save PDF /
+            <button class="action-btn" onclick="window.print()">Save PDF / Print Entry</button>
+        </div>
+
+        <div class="journal-container">
+            <!-- LEFT COLUMN -->
+            <div class="page prepare-page">
+                <h2>PREPARE TO TRADE</h2>
+                <div class="subtitle">Before the market opens, slow down and think clearly. Define your goals, control your risk, and commit to discipline before taking a single trade.</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Today, I Trade With:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Profit Goal ($):</label>
+                        <input type="number">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>I Will Stop At (Max Loss $):</label>
+                        <input type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Trades Allowed:</label>
+                        <input type="number">
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 20px;">
+                    <div class="form-group checkbox-group">
+                        <label>Setups I Am Allowed To Take:</label>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>I Will Not Trade If:</label>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Market Bias Today:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Key Levels:</label>
+                        <input type="text">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>I Will Only Enter If:</label>
+                    <input type="text">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>If I Hit My Loss Limit, I Will:</label>
+                    <input type="text">
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>If I Feel Emotional, I Will:</label>
+                    <input type="text">
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Right Now I Feel:</label>
+                    <div class="radio-grid">
+                        <label class="radio-label"><input type="radio" name="mood"> Focused</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Nervous</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Excited</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Frustrated</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Greedy</label>
+                        <label class="radio-label"><input type="radio" name="mood"> Calm</label>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 30px;">
+                    <div class="form-group">
+                        <label>Date:</label>
+                        <input type="date" id="journal-date" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="page review-page">
+                <h2>POST TRADE REVIEW</h2>
+                <div class="subtitle">Review your actions, not just your results. This is where you learn, adjust, and improve your discipline.</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pair / Asset:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group" style="justify-content: center; padding-top: 15px;">
+                        <label class="radio-label"><input type="radio" name="direction"> Short &nbsp;&nbsp; <input type="radio" name="direction"> Long</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Position Size:</label>
+                        <input type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Setup Name:</label>
+                        <input type="text">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>R:R Ratio:</label>
+                        <input type="text">
+                    </div>
+                    <div class="form-group" style="justify-content: center; padding-top: 15px;">
+                        <label class="radio-label"><input type="radio" name="outcome" value="win" id="radio-win"> Win &nbsp;&nbsp; 
+                        <input type="radio" name="outcome" value="loss" id="radio-loss"> Loss</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Entry Price:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Loss:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Exit Price:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                    <div class="form-group">
+                        <label>Take Profit:</label>
+                        <input type="number" step="0.25">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>P/L ($):</label>
+                        <input type="number" id="pnl-input" placeholder="e.g. 500 or -150">
+                    </div>
+                    <div class="form-group">
+                        <label>Execution Rating (1-10):</label>
+                        <input type="number" min="1" max="10">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>What Went Well?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Mistakes Made?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>What Could Be Improved?</label>
+                    <textarea></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Chart (Click to attach execution screenshot):</label>
+                    <div class="chart-upload">
+                        <span id="upload-text">+ Upload Image</span>
+                        <input type="file" accept="image/*" id="chart-input">
+                        <img id="chart-preview" src="#" alt="Chart Preview">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Dark Mode Logic ---
+        const themeBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            themeBtn.textContent = '☀️ Light Mode';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                themeBtn.textContent = '☀️ Light Mode';
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeBtn.textContent = '🌙 Dark Mode';
+            }
+        });
+
+        // --- Application Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const calendarGrid = document.getElementById('calendar-grid');
+            
+            // Start the calendar view on the current date
+            let currentViewDate = new Date(); 
+            
+            // Load saved data from browser's local storage
+            let journalData = JSON.parse(localStorage.getItem('trading_journal_data')) || {};
+            let activeDateString = null;
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            function renderCalendar() {
+                const year = currentViewDate.getFullYear();
+                const month = currentViewDate.getMonth();
+                
+                document.getElementById('month-title').textContent = `${monthNames[month]} ${year}`;
+
+                const firstDayIndex = new Date(year, month, 1).getDay(); 
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // Clear old days
+                const existingCells = calendarGrid.querySelectorAll('.day-cell');
+                existingCells.forEach(c => c.remove());
+
+                // Add empty padding days
+                for (let i = 0; i < firstDayIndex; i++) {
+                    let emptyCell = document.createElement('div');
+                    emptyCell.className = 'day-cell empty';
+                    calendarGrid.appendChild(emptyCell);
+                }
+
+                // Add actual days
+                for (let i = 1; i <= daysInMonth; i++) {
+                    let cell = document.createElement('div');
+                    cell.className = 'day-cell';
+                    
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    
+                    cell.innerHTML = `
+                        <div class="date-number">${i}</div>
+                        <div class="pnl-value" id="pnl-display-${dateStr}"></div>
+                    `;
+
+                    cell.addEventListener('dblclick', () => openJournal(dateStr));
+                    calendarGrid.appendChild(cell);
+
+                    // If local data exists, show it
+                    if (journalData[dateStr] && journalData[dateStr].pnl !== undefined) {
+                        const val = journalData[dateStr].pnl;
+                        const displayCell = cell.querySelector('.pnl-value');
+                        displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
+                        displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
+                    }
+                }
+
+                updateDashboardStats();
+            }
+
+            // Month Navigation
+            document.getElementById('btn-prev-month').addEventListener('click', () => {
+                currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            document.getElementById('btn-next-month').addEventListener('click', () => {
+                currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            // Open Journal
+            function openJournal(dateStr) {
+                activeDateString = dateStr;
+                document.getElementById('calendar-view').style.display = 'none';
+                document.getElementById('journal-view').style.display = 'block';
+                
+                document.getElementById('journal-date').value = dateStr;
+                
+                // Pre-fill form if data exists in local storage
+                const currentData = journalData[dateStr] || {};
+                document.getElementById('pnl-input').value = currentData.pnl !== undefined ? currentData.pnl : '';
+                
+                if (currentData.outcome === 'win') {
+                    document.getElementById('radio-win').checked = true;
+                } else if (currentData.outcome === 'loss') {
+                    document.getElementById('radio-loss').checked = true;
+                } else {
+                    document.getElementById('radio-win').checked = false;
+                    document.getElementById('radio-loss').checked = false;
+                }
+
+                window.scrollTo(0,0);
+            }
+
+            // Back to Calendar
+            document.getElementById('btn-back').addEventListener('click', () => {
+                activeDateString = null; 
+                document.getElementById('journal-view').style.display = 'none';
+                document.getElementById('calendar-view').style.display = 'block';
+                window.scrollTo(0,0);
+            });
+
+            // Update PNL logic
+            document.getElementById('pnl-input').addEventListener('input', syncCalendarData);
+            document.getElementById('radio-win').addEventListener('change', syncCalendarData);
+            document.getElementById('radio-loss').addEventListener('change', syncCalendarData);
+
+            function syncCalendarData() {
+                if (!activeDateString) return;
+
+                if (!journalData[activeDateString]) journalData[activeDateString] = {};
+                
+                const pnlValue = document.getElementById('pnl-input').value;
+                journalData[activeDateString].pnl = pnlValue !== '' ? parseFloat(pnlValue) : undefined;
+                
+                if (document.getElementById('radio-win').checked) {
+                    journalData[activeDateString].outcome = 'win';
+                } else if (document.getElementById('radio-loss').checked) {
+                    journalData[activeDateString].outcome = 'loss';
+                } else {
+                    journalData[activeDateString].outcome = null;
+                }
+
+                // Save to local storage!
+                localStorage.setItem('trading_journal_data', JSON.stringify(journalData));
+
+                const displayCell = document.getElementById(`pnl-display-${activeDateString}`);
+                if (displayCell) {
+                    if (journalData[activeDateString].pnl !== undefined) {
+                        const val = journalData[activeDateString].pnl;
+                        displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
+                        displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
+                    } else {
+                        displayCell.textContent = '';
+                        displayCell.className = 'pnl-value';
+                    }
+                }
+
+                updateDashboardStats();
+            }
+
+            // Dashboard Stats
+            function updateDashboardStats() {
+                const year = currentViewDate.getFullYear();
+                const month = String(currentViewDate.getMonth() + 1).padStart(2, '0');
+                const monthPrefix = `${year}-${month}`; 
+                
+                let totalPnl = 0;
+                let wins = 0;
+                let totalTrades = 0;
+
+                for (let dateStr in journalData) {
+                    if (dateStr.startsWith(monthPrefix)) {
+                        if (journalData[dateStr].pnl !== undefined) {
+                            totalPnl += journalData[dateStr].pnl;
+                        }
+                        if (journalData[dateStr].outcome === 'win') {
+                            wins++;
+                            totalTrades++;
+                        } else if (journalData[dateStr].outcome === 'loss') {
+                            totalTrades++;
+                        }
+                    }
+                }
+
+                const grossEl = document.getElementById('gross-pnl');
+                grossEl.textContent = totalPnl >= 0 ? `+$${totalPnl.toFixed(2)}` : `-$${Math.abs(totalPnl).toFixed(2)}`;
+                grossEl.className = `value ${totalPnl >= 0 ? 'profit' : 'loss'}`;
+
+                const winRateEl = document.getElementById('win-rate');
+                const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
+                winRateEl.textContent = `${winRate}%`;
+            }
+
+            // Chart Image Upload Preview
+            document.getElementById('chart-input').addEventListener('change', function(e) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('chart-preview');
+                    const text = document.getElementById('upload-text');
+                    preview.src = event.target.result;
+                    preview.style.display = 'block';
+                    text.style.display = 'none';
+                }
+                if(e.target.files[0]) {
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // Initialize app
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
