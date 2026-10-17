@@ -298,10 +298,29 @@
             input::placeholder, textarea::placeholder { color: transparent; }
         }
 
+        /* --- MOBILE RESPONSIVE OPTIMIZATIONS --- */
         @media (max-width: 900px) {
-            .journal-container { grid-template-columns: 1fr; }
-            .calendar-grid { grid-template-columns: repeat(2, 1fr); }
-            .weekday-header { display: none; }
+            body { padding: 10px; }
+            .header-bar { flex-direction: column; gap: 15px; text-align: center; }
+            
+            /* Stack Stats Vertically */
+            .stats-bar { flex-direction: column; gap: 10px; }
+            
+            /* Shrink Calendar for Mobile */
+            .calendar-grid { gap: 5px; }
+            .weekday-header { font-size: 11px; padding: 5px 0; }
+            .day-cell { height: 70px; padding: 5px; }
+            .date-number { font-size: 11px; }
+            .pnl-value { font-size: 13px; }
+            
+            /* Stack Journal Pages and Forms Vertically */
+            .journal-container { grid-template-columns: 1fr; gap: 20px; }
+            .page { padding: 20px; }
+            .form-row { flex-direction: column; gap: 10px; margin-bottom: 10px; }
+            .radio-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            h1 { font-size: 20px; }
+            .controls { justify-content: center; }
         }
     </style>
 </head>
@@ -606,6 +625,7 @@
         });
 
         // --- Push Data to Cloud ---
+        // Using 'change' event to limit database writes to when you click out of the box
         document.getElementById('pnl-input').addEventListener('change', syncCalendarData);
         document.getElementById('radio-win').addEventListener('change', syncCalendarData);
         document.getElementById('radio-loss').addEventListener('change', syncCalendarData);
@@ -643,7 +663,7 @@
             try {
                 await setDoc(doc(db, "journalEntries", activeDateString), journalData[activeDateString]);
             } catch (e) {
-                console.warn("Could not push to Firebase. Did you add your config keys?");
+                console.warn("Could not push to Firebase.");
             }
         }
 
