@@ -302,23 +302,16 @@
         @media (max-width: 900px) {
             body { padding: 10px; }
             .header-bar { flex-direction: column; gap: 15px; text-align: center; }
-            
-            /* Stack Stats Vertically */
             .stats-bar { flex-direction: column; gap: 10px; }
-            
-            /* Shrink Calendar for Mobile */
             .calendar-grid { gap: 5px; }
             .weekday-header { font-size: 11px; padding: 5px 0; }
             .day-cell { height: 70px; padding: 5px; }
             .date-number { font-size: 11px; }
             .pnl-value { font-size: 13px; }
-            
-            /* Stack Journal Pages and Forms Vertically */
             .journal-container { grid-template-columns: 1fr; gap: 20px; }
             .page { padding: 20px; }
             .form-row { flex-direction: column; gap: 10px; margin-bottom: 10px; }
             .radio-grid { grid-template-columns: repeat(2, 1fr); }
-            
             h1 { font-size: 20px; }
             .controls { justify-content: center; }
         }
@@ -353,7 +346,6 @@
         </div>
 
         <div class="calendar-grid" id="calendar-grid">
-            <!-- Headers -->
             <div class="weekday-header">Sun</div>
             <div class="weekday-header">Mon</div>
             <div class="weekday-header">Tue</div>
@@ -379,47 +371,47 @@
                 <div class="subtitle">Before the market opens, slow down and think clearly. Define your goals, control your risk, and commit to discipline before taking a single trade.</div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Today, I Trade With:</label><input type="text"></div>
-                    <div class="form-group"><label>Profit Goal ($):</label><input type="number"></div>
+                    <div class="form-group"><label>Today, I Trade With:</label><input type="text" class="j-field" data-key="tradeWith"></div>
+                    <div class="form-group"><label>Profit Goal ($):</label><input type="number" class="j-field" data-key="profitGoal"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>I Will Stop At (Max Loss $):</label><input type="number"></div>
-                    <div class="form-group"><label>Max Trades Allowed:</label><input type="number"></div>
+                    <div class="form-group"><label>I Will Stop At (Max Loss $):</label><input type="number" class="j-field" data-key="maxLoss"></div>
+                    <div class="form-group"><label>Max Trades Allowed:</label><input type="number" class="j-field" data-key="maxTrades"></div>
                 </div>
 
                 <div class="form-row" style="margin-top: 20px;">
                     <div class="form-group checkbox-group">
                         <label>Setups I Am Allowed To Take:</label>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="setup1_active"> <input type="text" class="j-field" data-key="setup1_text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="setup2_active"> <input type="text" class="j-field" data-key="setup2_text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="setup3_active"> <input type="text" class="j-field" data-key="setup3_text"></div>
                     </div>
                     <div class="form-group checkbox-group">
                         <label>I Will Not Trade If:</label>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
-                        <div class="checkbox-row"><input type="checkbox"> <input type="text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="notrade1_active"> <input type="text" class="j-field" data-key="notrade1_text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="notrade2_active"> <input type="text" class="j-field" data-key="notrade2_text"></div>
+                        <div class="checkbox-row"><input type="checkbox" class="j-check" data-key="notrade3_active"> <input type="text" class="j-field" data-key="notrade3_text"></div>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Market Bias Today:</label><input type="text"></div>
-                    <div class="form-group"><label>Key Levels:</label><input type="text"></div>
+                    <div class="form-group"><label>Market Bias Today:</label><input type="text" class="j-field" data-key="marketBias"></div>
+                    <div class="form-group"><label>Key Levels:</label><input type="text" class="j-field" data-key="keyLevels"></div>
                 </div>
 
-                <div class="form-group" style="margin-top: 15px;"><label>I Will Only Enter If:</label><input type="text"></div>
-                <div class="form-group" style="margin-top: 15px;"><label>If I Hit My Loss Limit, I Will:</label><input type="text"></div>
-                <div class="form-group" style="margin-top: 15px;"><label>If I Feel Emotional, I Will:</label><input type="text"></div>
+                <div class="form-group" style="margin-top: 15px;"><label>I Will Only Enter If:</label><input type="text" class="j-field" data-key="onlyEnterIf"></div>
+                <div class="form-group" style="margin-top: 15px;"><label>If I Hit My Loss Limit, I Will:</label><input type="text" class="j-field" data-key="lossLimitPlan"></div>
+                <div class="form-group" style="margin-top: 15px;"><label>If I Feel Emotional, I Will:</label><input type="text" class="j-field" data-key="emotionalPlan"></div>
 
                 <div class="form-group" style="margin-top: 20px;">
                     <label>Right Now I Feel:</label>
                     <div class="radio-grid">
-                        <label class="radio-label"><input type="radio" name="mood"> Focused</label>
-                        <label class="radio-label"><input type="radio" name="mood"> Nervous</label>
-                        <label class="radio-label"><input type="radio" name="mood"> Excited</label>
-                        <label class="radio-label"><input type="radio" name="mood"> Frustrated</label>
-                        <label class="radio-label"><input type="radio" name="mood"> Greedy</label>
-                        <label class="radio-label"><input type="radio" name="mood"> Calm</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Focused" class="j-radio" data-key="mood"> Focused</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Nervous" class="j-radio" data-key="mood"> Nervous</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Excited" class="j-radio" data-key="mood"> Excited</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Frustrated" class="j-radio" data-key="mood"> Frustrated</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Greedy" class="j-radio" data-key="mood"> Greedy</label>
+                        <label class="radio-label"><input type="radio" name="mood" value="Calm" class="j-radio" data-key="mood"> Calm</label>
                     </div>
                 </div>
 
@@ -433,43 +425,48 @@
                 <div class="subtitle">Review your actions, not just your results. This is where you learn, adjust, and improve your discipline.</div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Pair / Asset:</label><input type="text"></div>
+                    <div class="form-group"><label>Pair / Asset:</label><input type="text" class="j-field" data-key="asset"></div>
                     <div class="form-group" style="justify-content: center; padding-top: 15px;">
-                        <label class="radio-label"><input type="radio" name="direction"> Short &nbsp;&nbsp; <input type="radio" name="direction"> Long</label>
+                        <label class="radio-label">
+                            <input type="radio" name="direction" value="Short" class="j-radio" data-key="direction"> Short &nbsp;&nbsp; 
+                            <input type="radio" name="direction" value="Long" class="j-radio" data-key="direction"> Long
+                        </label>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Position Size:</label><input type="number"></div>
-                    <div class="form-group"><label>Setup Name:</label><input type="text"></div>
+                    <div class="form-group"><label>Position Size:</label><input type="number" class="j-field" data-key="positionSize"></div>
+                    <div class="form-group"><label>Setup Name:</label><input type="text" class="j-field" data-key="setupName"></div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>R:R Ratio:</label><input type="text"></div>
+                    <div class="form-group"><label>R:R Ratio:</label><input type="text" class="j-field" data-key="rrRatio"></div>
                     <div class="form-group" style="justify-content: center; padding-top: 15px;">
-                        <label class="radio-label"><input type="radio" name="outcome" value="win" id="radio-win"> Win &nbsp;&nbsp; 
-                        <input type="radio" name="outcome" value="loss" id="radio-loss"> Loss</label>
+                        <label class="radio-label">
+                            <input type="radio" name="outcome" value="win" id="radio-win" class="j-radio" data-key="outcome"> Win &nbsp;&nbsp; 
+                            <input type="radio" name="outcome" value="loss" id="radio-loss" class="j-radio" data-key="outcome"> Loss
+                        </label>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Entry Price:</label><input type="number" step="0.25"></div>
-                    <div class="form-group"><label>Stop Loss:</label><input type="number" step="0.25"></div>
+                    <div class="form-group"><label>Entry Price:</label><input type="number" step="0.25" class="j-field" data-key="entryPrice"></div>
+                    <div class="form-group"><label>Stop Loss:</label><input type="number" step="0.25" class="j-field" data-key="stopLoss"></div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Exit Price:</label><input type="number" step="0.25"></div>
-                    <div class="form-group"><label>Take Profit:</label><input type="number" step="0.25"></div>
+                    <div class="form-group"><label>Exit Price:</label><input type="number" step="0.25" class="j-field" data-key="exitPrice"></div>
+                    <div class="form-group"><label>Take Profit:</label><input type="number" step="0.25" class="j-field" data-key="takeProfit"></div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>P/L ($):</label><input type="number" id="pnl-input" placeholder="e.g. 500 or -150"></div>
-                    <div class="form-group"><label>Execution Rating (1-10):</label><input type="number" min="1" max="10"></div>
+                    <div class="form-group"><label>P/L ($):</label><input type="number" id="pnl-input" class="j-field" data-key="pnl" placeholder="e.g. 500 or -150"></div>
+                    <div class="form-group"><label>Execution Rating (1-10):</label><input type="number" min="1" max="10" class="j-field" data-key="execRating"></div>
                 </div>
 
-                <div class="form-group" style="margin-top: 20px;"><label>What Went Well?</label><textarea></textarea></div>
-                <div class="form-group"><label>Mistakes Made?</label><textarea></textarea></div>
-                <div class="form-group"><label>What Could Be Improved?</label><textarea></textarea></div>
+                <div class="form-group" style="margin-top: 20px;"><label>What Went Well?</label><textarea class="j-field" data-key="wentWell"></textarea></div>
+                <div class="form-group"><label>Mistakes Made?</label><textarea class="j-field" data-key="mistakes"></textarea></div>
+                <div class="form-group"><label>What Could Be Improved?</label><textarea class="j-field" data-key="improved"></textarea></div>
 
                 <div class="form-group">
                     <label>Chart (Click to attach execution screenshot):</label>
@@ -535,7 +532,7 @@
                     journalData[document.id] = document.data();
                 });
             } catch (e) {
-                console.warn("Firebase not connected yet. Waiting for API keys.");
+                console.warn("Firebase not connected yet.");
             }
             renderCalendar();
         }
@@ -551,18 +548,15 @@
             const firstDayIndex = new Date(year, month, 1).getDay(); 
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Clear cells (keep headers)
             const existingCells = calendarGrid.querySelectorAll('.day-cell');
             existingCells.forEach(c => c.remove());
 
-            // Build blank offset days
             for (let i = 0; i < firstDayIndex; i++) {
                 let emptyCell = document.createElement('div');
                 emptyCell.className = 'day-cell empty';
                 calendarGrid.appendChild(emptyCell);
             }
 
-            // Build month days
             for (let i = 1; i <= daysInMonth; i++) {
                 let cell = document.createElement('div');
                 cell.className = 'day-cell';
@@ -576,9 +570,8 @@
                 cell.addEventListener('dblclick', () => openJournal(dateStr));
                 calendarGrid.appendChild(cell);
 
-                // Inject Cloud Data if exists
-                if (journalData[dateStr] && journalData[dateStr].pnl !== undefined) {
-                    const val = journalData[dateStr].pnl;
+                if (journalData[dateStr] && journalData[dateStr].pnl !== undefined && journalData[dateStr].pnl !== '') {
+                    const val = parseFloat(journalData[dateStr].pnl);
                     const displayCell = cell.querySelector('.pnl-value');
                     displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
                     displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
@@ -587,7 +580,6 @@
             updateDashboardStats();
         }
 
-        // --- Navigation ---
         document.getElementById('btn-prev-month').addEventListener('click', () => {
             currentViewDate.setMonth(currentViewDate.getMonth() - 1);
             renderCalendar();
@@ -604,16 +596,36 @@
             document.getElementById('journal-date').value = dateStr;
             
             const currentData = journalData[dateStr] || {};
-            document.getElementById('pnl-input').value = currentData.pnl !== undefined ? currentData.pnl : '';
             
-            if (currentData.outcome === 'win') {
-                document.getElementById('radio-win').checked = true;
-            } else if (currentData.outcome === 'loss') {
-                document.getElementById('radio-loss').checked = true;
+            // Populate all fields from stored data
+            document.querySelectorAll('.j-field').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.value = currentData[key] !== undefined ? currentData[key] : '';
+            });
+
+            document.querySelectorAll('.j-check').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.checked = currentData[key] === true;
+            });
+
+            document.querySelectorAll('.j-radio').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.checked = (currentData[key] === el.value);
+            });
+
+            // Handle image preview if saved
+            const preview = document.getElementById('chart-preview');
+            const text = document.getElementById('upload-text');
+            if (currentData.chartImage) {
+                preview.src = currentData.chartImage;
+                preview.style.display = 'block';
+                text.style.display = 'none';
             } else {
-                document.getElementById('radio-win').checked = false;
-                document.getElementById('radio-loss').checked = false;
+                preview.src = '#';
+                preview.style.display = 'none';
+                text.style.display = 'block';
             }
+
             window.scrollTo(0,0);
         }
 
@@ -624,32 +636,44 @@
             window.scrollTo(0,0);
         });
 
-        // --- Push Data to Cloud ---
-        // Using 'change' event to limit database writes to when you click out of the box
-        document.getElementById('pnl-input').addEventListener('change', syncCalendarData);
-        document.getElementById('radio-win').addEventListener('change', syncCalendarData);
-        document.getElementById('radio-loss').addEventListener('change', syncCalendarData);
+        // --- Universal Auto-Sync for Every Field ---
+        document.querySelectorAll('.j-field, .j-check, .j-radio').forEach(input => {
+            input.addEventListener('change', syncCalendarData);
+            input.addEventListener('input', () => {
+                if(input.type === 'text' || input.type === 'number' || input.tagName === 'TEXTAREA') {
+                    syncCalendarData();
+                }
+            });
+        });
 
         async function syncCalendarData() {
             if (!activeDateString) return;
             if (!journalData[activeDateString]) journalData[activeDateString] = {};
             
-            const pnlValue = document.getElementById('pnl-input').value;
-            journalData[activeDateString].pnl = pnlValue !== '' ? parseFloat(pnlValue) : undefined;
-            
-            if (document.getElementById('radio-win').checked) {
-                journalData[activeDateString].outcome = 'win';
-            } else if (document.getElementById('radio-loss').checked) {
-                journalData[activeDateString].outcome = 'loss';
-            } else {
-                journalData[activeDateString].outcome = null;
-            }
+            // Gather all input values
+            document.querySelectorAll('.j-field').forEach(el => {
+                const key = el.getAttribute('data-key');
+                journalData[activeDateString][key] = el.value;
+            });
 
-            // Sync visual cell immediately
+            document.querySelectorAll('.j-check').forEach(el => {
+                const key = el.getAttribute('data-key');
+                journalData[activeDateString][key] = el.checked;
+            });
+
+            document.querySelectorAll('.j-radio').forEach(el => {
+                if (el.checked) {
+                    const key = el.getAttribute('data-key');
+                    journalData[activeDateString][key] = el.value;
+                }
+            });
+
+            // Update calendar preview display instantly
+            const pnlVal = document.getElementById('pnl-input').value;
             const displayCell = document.getElementById(`pnl-display-${activeDateString}`);
             if (displayCell) {
-                if (journalData[activeDateString].pnl !== undefined) {
-                    const val = journalData[activeDateString].pnl;
+                if (pnlVal !== '') {
+                    const val = parseFloat(pnlVal);
                     displayCell.textContent = val >= 0 ? `+$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
                     displayCell.className = `pnl-value ${val >= 0 ? 'profit' : 'loss'}`;
                 } else {
@@ -659,7 +683,7 @@
             }
             updateDashboardStats();
 
-            // Push payload to Firebase
+            // Push entire day object to Firebase
             try {
                 await setDoc(doc(db, "journalEntries", activeDateString), journalData[activeDateString]);
             } catch (e) {
@@ -678,13 +702,14 @@
 
             for (let dateStr in journalData) {
                 if (dateStr.startsWith(monthPrefix)) {
-                    if (journalData[dateStr].pnl !== undefined) {
-                        totalPnl += journalData[dateStr].pnl;
+                    const entry = journalData[dateStr];
+                    if (entry.pnl !== undefined && entry.pnl !== '') {
+                        totalPnl += parseFloat(entry.pnl);
                     }
-                    if (journalData[dateStr].outcome === 'win') {
+                    if (entry.outcome === 'win') {
                         wins++;
                         totalTrades++;
-                    } else if (journalData[dateStr].outcome === 'loss') {
+                    } else if (entry.outcome === 'loss') {
                         totalTrades++;
                     }
                 }
@@ -707,13 +732,18 @@
                 preview.src = event.target.result;
                 preview.style.display = 'block';
                 text.style.display = 'none';
+
+                if (activeDateString) {
+                    if (!journalData[activeDateString]) journalData[activeDateString] = {};
+                    journalData[activeDateString].chartImage = event.target.result;
+                    syncCalendarData();
+                }
             }
             if(e.target.files[0]) {
                 reader.readAsDataURL(e.target.files[0]);
             }
         });
 
-        // Trigger startup fetch
         fetchCloudData();
     </script>
 </body>
